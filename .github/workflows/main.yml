@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install flake8==7.3.0
         pip install -r ./backend/requirements.txt
-    - name: Lint and check migrations
+    - name: Lint, tests and migrations check
       env:
         POSTGRES_USER: foodgram_user
         POSTGRES_PASSWORD: foodgram_password
@@ -39,6 +39,7 @@ jobs:
         python -m flake8 backend/
         cd backend/
         python manage.py migrate
+        pytest
 
   build_backend_and_push_to_docker_hub:
     # Образы собираем и публикуем только из основной ветки

@@ -74,6 +74,13 @@ API поднимется на `http://127.0.0.1:8000/api/`. Для просмо�
 спецификации и фронтенда выполните `docker compose up` из папки `infra/` —
 фронт и Redoc будут на `http://localhost` и `http://localhost/api/docs/`.
 
+Юнит- и интеграционные тесты API (pytest, 86 шт.):
+
+```bash
+cd backend
+pytest
+```
+
 Проверка API готовой Postman-коллекцией — см.
 [postman_collection/README.md](postman_collection/README.md)
 (перед повторным прогоном: `bash postman_collection/clear_db.sh`).

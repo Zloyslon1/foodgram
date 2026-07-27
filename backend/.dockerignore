@@ -1,4 +1,6 @@
 venv/
+tests/
+pytest.ini
 media/
 collected_static/
 db.sqlite3

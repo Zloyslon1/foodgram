@@ -68,6 +68,7 @@ class UserViewSet(DjoserUserViewSet):
             User.objects.filter(subscribers__user=request.user)
             .prefetch_related('recipes')
             .annotate(recipes_count=Count('recipes'))
+            .order_by('username')
         )
         page = self.paginate_queryset(authors)
         serializer = SubscriptionSerializer(
