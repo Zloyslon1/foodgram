@@ -4,12 +4,12 @@ from .conftest import make_recipe
 
 
 @pytest.fixture
-def author_with_recipes(other_user, tags, ingredients):
+def author_with_recipes(other_user, tags, products):
     for index in range(2):
         make_recipe(
             other_user,
             tags[:1],
-            [(ingredients[0], 1)],
+            [(products[0], 1)],
             name=f'Рецепт Маши {index}',
         )
     return other_user
@@ -70,8 +70,8 @@ def test_unsubscribe(auth_api, other_user):
     assert auth_api.get('/api/users/subscriptions/').data['count'] == 0
 
 
-def test_unsubscribe_without_subscription_returns_400(
+def test_unsubscribe_without_subscription_returns_404(
     auth_api, other_user
 ):
     response = auth_api.delete(f'/api/users/{other_user.id}/subscribe/')
-    assert response.status_code == 400
+    assert response.status_code == 404

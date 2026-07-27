@@ -66,7 +66,7 @@ def test_me_returns_profile(auth_api, user):
     response = auth_api.get('/api/users/me/')
     assert response.status_code == 200
     assert response.data['username'] == user.username
-    assert response.data['is_subscribed'] is False
+    assert not response.data['is_subscribed']
     assert response.data['avatar'] is None
 
 

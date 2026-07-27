@@ -19,8 +19,8 @@ def test_create_recipe(auth_api, user, recipe_payload):
     assert response.status_code == 201
     data = response.data
     assert data['author']['username'] == user.username
-    assert data['is_favorited'] is False
-    assert data['is_in_shopping_cart'] is False
+    assert not data['is_favorited']
+    assert not data['is_in_shopping_cart']
     assert data['ingredients'][0]['amount'] == 10
     assert data['tags'][0]['slug'] == 'breakfast'
     assert data['image'].startswith('http')
@@ -54,7 +54,7 @@ def test_create_recipe_requires_auth(api, recipe_payload):
     ],
 )
 def test_create_recipe_invalid_data(
-    auth_api, recipe_payload, ingredients, tags, broken
+    auth_api, recipe_payload, products, tags, broken
 ):
     payload = dict(recipe_payload)
     for field, value in broken.items():
@@ -63,16 +63,16 @@ def test_create_recipe_invalid_data(
         elif value == 'duplicate':
             payload[field] = payload[field] * 2
         elif field == 'ingredients' and value and value[0]['id'] == 'first':
-            payload[field] = [{'id': ingredients[0].id, 'amount': 0}]
+            payload[field] = [{'id': products[0].id, 'amount': 0}]
         else:
             payload[field] = value
     response = auth_api.post('/api/recipes/', payload, format='json')
     assert response.status_code == 400
 
 
-def test_author_can_update_recipe(auth_api, recipe, ingredients, tags):
+def test_author_can_update_recipe(auth_api, recipe, products, tags):
     payload = {
-        'ingredients': [{'id': ingredients[1].id, 'amount': 55}],
+        'ingredients': [{'id': products[1].id, 'amount': 55}],
         'tags': [tags[1].id],
         'name': 'Борщ обновлённый',
         'text': 'Новое описание',
@@ -89,10 +89,10 @@ def test_author_can_update_recipe(auth_api, recipe, ingredients, tags):
 
 @pytest.mark.parametrize('field', ['ingredients', 'tags'])
 def test_update_requires_ingredients_and_tags(
-    auth_api, recipe, ingredients, tags, field
+    auth_api, recipe, products, tags, field
 ):
     payload = {
-        'ingredients': [{'id': ingredients[0].id, 'amount': 5}],
+        'ingredients': [{'id': products[0].id, 'amount': 5}],
         'tags': [tags[0].id],
         'name': 'Имя',
         'text': 'Текст',
@@ -137,10 +137,10 @@ def test_delete_missing_recipe_returns_404(auth_api):
 
 
 @pytest.mark.django_db
-def test_recipes_ordered_newest_first(api, user, tags, ingredients):
+def test_recipes_ordered_newest_first(api, user, tags, products):
     for index in range(3):
         make_recipe(
-            user, tags[:1], [(ingredients[0], 1)], name=f'Рецепт {index}'
+            user, tags[:1], [(products[0], 1)], name=f'Рецепт {index}'
         )
     response = api.get('/api/recipes/')
     identifiers = [item['id'] for item in response.data['results']]
@@ -148,10 +148,10 @@ def test_recipes_ordered_newest_first(api, user, tags, ingredients):
 
 
 @pytest.mark.django_db
-def test_pagination_limit(api, user, tags, ingredients):
+def test_pagination_limit(api, user, tags, products):
     for index in range(3):
         make_recipe(
-            user, tags[:1], [(ingredients[0], 1)], name=f'Рецепт {index}'
+            user, tags[:1], [(products[0], 1)], name=f'Рецепт {index}'
         )
     response = api.get('/api/recipes/?limit=2')
     assert len(response.data['results']) == 2

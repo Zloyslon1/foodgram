@@ -1,15 +1,15 @@
 from django_filters import rest_framework as filters
 
-from recipes.models import Ingredient, Recipe, Tag
+from recipes.models import Product, Recipe, Tag
 
 
-class IngredientFilter(filters.FilterSet):
-    """Поиск ингредиентов по началу названия."""
+class ProductFilter(filters.FilterSet):
+    """Поиск продуктов по началу названия."""
 
     name = filters.CharFilter(lookup_expr='istartswith')
 
     class Meta:
-        model = Ingredient
+        model = Product
         fields = ('name',)
 
 
@@ -30,14 +30,14 @@ class RecipeFilter(filters.FilterSet):
         model = Recipe
         fields = ('author', 'tags')
 
-    def filter_is_favorited(self, queryset, name, value):
+    def _filter_by_relation(self, recipes, value, relation):
         user = self.request.user
         if value and user.is_authenticated:
-            return queryset.filter(favorites__user=user)
-        return queryset
+            return recipes.filter(**{f'{relation}__user': user})
+        return recipes
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
-        if value and user.is_authenticated:
-            return queryset.filter(shoppingcarts__user=user)
-        return queryset
+    def filter_is_favorited(self, recipes, name, value):
+        return self._filter_by_relation(recipes, value, 'favorites')
+
+    def filter_is_in_shopping_cart(self, recipes, name, value):
+        return self._filter_by_relation(recipes, value, 'shoppingcarts')

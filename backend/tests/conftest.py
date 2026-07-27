@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from rest_framework.test import APIClient
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.models import Product, Recipe, RecipeProduct, Tag
 
 User = get_user_model()
 
@@ -74,15 +74,15 @@ def tags(db):
 
 
 @pytest.fixture
-def ingredients(db):
+def products(db):
     return [
-        Ingredient.objects.create(name='капуста', measurement_unit='г'),
-        Ingredient.objects.create(name='картофель', measurement_unit='г'),
-        Ingredient.objects.create(name='молоко', measurement_unit='мл'),
+        Product.objects.create(name='капуста', measurement_unit='г'),
+        Product.objects.create(name='картофель', measurement_unit='г'),
+        Product.objects.create(name='молоко', measurement_unit='мл'),
     ]
 
 
-def make_recipe(author, tags, ingredient_amounts, name='Рецепт'):
+def make_recipe(author, tags, product_amounts, name='Рецепт'):
     recipe = Recipe.objects.create(
         author=author,
         name=name,
@@ -91,26 +91,26 @@ def make_recipe(author, tags, ingredient_amounts, name='Рецепт'):
         image=ContentFile(base64.b64decode(PNG_BASE64), name='r.png'),
     )
     recipe.tags.set(tags)
-    RecipeIngredient.objects.bulk_create(
-        RecipeIngredient(
-            recipe=recipe, ingredient=ingredient, amount=amount
+    RecipeProduct.objects.bulk_create(
+        RecipeProduct(
+            recipe=recipe, product=product, amount=amount
         )
-        for ingredient, amount in ingredient_amounts
+        for product, amount in product_amounts
     )
     return recipe
 
 
 @pytest.fixture
-def recipe(user, tags, ingredients):
+def recipe(user, tags, products):
     return make_recipe(
-        user, tags[:1], [(ingredients[0], 100)], name='Борщ'
+        user, tags[:1], [(products[0], 100)], name='Борщ'
     )
 
 
 @pytest.fixture
-def recipe_payload(tags, ingredients):
+def recipe_payload(tags, products):
     return {
-        'ingredients': [{'id': ingredients[0].id, 'amount': 10}],
+        'ingredients': [{'id': products[0].id, 'amount': 10}],
         'tags': [tags[0].id],
         'image': BASE64_IMAGE,
         'name': 'Новый рецепт',

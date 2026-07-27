@@ -5,7 +5,7 @@ def test_get_link_returns_short_link(api, recipe):
     response = api.get(f'/api/recipes/{recipe.id}/get-link/')
     assert response.status_code == 200
     assert set(response.data.keys()) == {'short-link'}
-    assert f'/s/{recipe.short_code}/' in response.data['short-link']
+    assert f'/s/{recipe.id}/' in response.data['short-link']
 
 
 @pytest.mark.django_db
@@ -14,24 +14,24 @@ def test_get_link_for_missing_recipe_returns_404(api):
 
 
 def test_short_link_redirects_to_recipe(api, recipe):
-    response = api.get(f'/s/{recipe.short_code}/')
+    response = api.get(f'/s/{recipe.id}/')
     assert response.status_code == 302
     assert response['Location'] == f'/recipes/{recipe.id}/'
 
 
 @pytest.mark.django_db
-def test_unknown_short_code_returns_404(api, db):
-    assert api.get('/s/nocode/').status_code == 404
+def test_unknown_short_link_returns_404(api, db):
+    assert api.get('/s/9876/').status_code == 404
 
 
 def test_short_link_survives_recipe_update(
-    auth_api, recipe, ingredients, tags
+    auth_api, recipe, products, tags
 ):
     link_before = auth_api.get(
         f'/api/recipes/{recipe.id}/get-link/'
     ).data['short-link']
     payload = {
-        'ingredients': [{'id': ingredients[1].id, 'amount': 5}],
+        'ingredients': [{'id': products[1].id, 'amount': 5}],
         'tags': [tags[1].id],
         'name': 'Совсем другое имя',
         'text': 'Другой текст',

@@ -1,8 +1,8 @@
-from recipes.models import Product
+from recipes.models import Tag
 
 from .base_import import ImportFromJsonCommand
 
 
 class Command(ImportFromJsonCommand):
-    model = Product
-    fixture = 'ingredients.json'
+    model = Tag
+    fixture = 'tags.json'

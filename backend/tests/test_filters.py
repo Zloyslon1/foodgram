@@ -6,16 +6,16 @@ from .conftest import make_recipe
 
 
 @pytest.fixture
-def three_recipes(user, other_user, tags, ingredients):
+def three_recipes(user, other_user, tags, products):
     return [
         make_recipe(
-            user, [tags[0]], [(ingredients[0], 1)], name='Завтрак у Васи'
+            user, [tags[0]], [(products[0], 1)], name='Завтрак у Васи'
         ),
         make_recipe(
-            user, [tags[1]], [(ingredients[1], 2)], name='Обед у Васи'
+            user, [tags[1]], [(products[1], 2)], name='Обед у Васи'
         ),
         make_recipe(
-            other_user, [tags[2]], [(ingredients[2], 3)], name='Ужин у Маши'
+            other_user, [tags[2]], [(products[2], 3)], name='Ужин у Маши'
         ),
     ]
 
@@ -67,14 +67,14 @@ def test_filter_is_in_shopping_cart(auth_api, user, three_recipes):
 
 
 @pytest.mark.django_db
-def test_ingredient_search_by_name_start(api, ingredients):
+def test_ingredient_search_by_name_start(api, products):
     response = api.get('/api/ingredients/?name=ка')
     names = {item['name'] for item in response.data}
     assert names == {'капуста', 'картофель'}
 
 
 @pytest.mark.django_db
-def test_tag_and_ingredient_lists_not_paginated(api, tags, ingredients):
+def test_tag_and_ingredient_lists_not_paginated(api, tags, products):
     assert isinstance(api.get('/api/tags/').data, list)
     assert isinstance(api.get('/api/ingredients/').data, list)
 
