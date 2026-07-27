@@ -1,6 +1,3 @@
-# Данные для автопроверки Практикума.
-# Логин/пароль действуют в админ-зоне https://foodgram-12.duckdns.org/admin/
-# TODO перед сдачей: указать имя ВМ Практикума, если деплой будет на неё.
 login: admin@foodgram.local
 password: admin12345
 vm_name: r-backend-vm-525168730
