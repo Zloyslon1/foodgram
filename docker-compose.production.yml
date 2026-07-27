@@ -1,0 +1,42 @@
+# Продакшен-конфиг: готовые образы с Docker Hub, без build
+
+# Имя проекта задано явно: volume и контейнеры не зависят от имени папки
+name: foodgram
+
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  db:
+    restart: always
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  backend:
+    restart: always
+    image: zloyslon/foodgram_backend
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - static:/backend_static
+      - media:/app/media
+  frontend:
+    image: zloyslon/foodgram_frontend
+    command: sh -c "cp -r /app/build/. /static/"
+    volumes:
+      - static:/static
+  gateway:
+    restart: always
+    image: zloyslon/foodgram_gateway
+    depends_on:
+      - backend
+    ports:
+      # 80 на сервере занят внешним nginx — он проксирует домен сюда
+      - "9090:80"
+    volumes:
+      - static:/static
+      - media:/media
