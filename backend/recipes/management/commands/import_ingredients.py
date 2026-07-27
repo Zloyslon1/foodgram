@@ -1,6 +1,6 @@
 from recipes.models import Product
 
-from .base_import import ImportFromJsonCommand
+from ._base_import import ImportFromJsonCommand
 
 
 class Command(ImportFromJsonCommand):
