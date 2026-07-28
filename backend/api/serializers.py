@@ -240,9 +240,10 @@ class UserWithRecipesSerializer(UserSerializer):
         read_only_fields = fields
 
     def get_recipes(self, author):
-        request = self.context.get('request')
         try:
-            recipes_limit = int(request.GET.get('recipes_limit'))
+            recipes_limit = int(
+                self.context.get('request').GET.get('recipes_limit')
+            )
         except (AttributeError, TypeError, ValueError):
             recipes_limit = None
         return RecipeShortReadSerializer(
