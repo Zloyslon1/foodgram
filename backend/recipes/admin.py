@@ -19,9 +19,10 @@ class HasRelatedFilter(admin.SimpleListFilter):
     """Базовый фильтр «есть связанные записи / нет»."""
 
     relation = None
+    LOOKUP_CHOICES = (('1', 'Есть'), ('0', 'Нет'))
 
     def lookups(self, request, model_admin):
-        return (('1', 'Есть'), ('0', 'Нет'))
+        return self.LOOKUP_CHOICES
 
     def queryset(self, request, records):
         if self.value() == '1':
@@ -62,51 +63,54 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
     title = 'время готовки'
     parameter_name = 'cooking_time'
+    ranges = {}
 
-    @staticmethod
-    def thresholds():
+    def lookups(self, request, model_admin):
         times = sorted(
             Recipe.objects.values_list('cooking_time', flat=True)
         )
         if len(set(times)) < 3:
-            return None
+            return ()
         fast, medium = times[len(times) // 3], times[len(times) * 2 // 3]
-        return None if fast == medium else (fast, medium)
-
-    def bins(self):
-        thresholds = self.thresholds()
-        if thresholds is None:
-            return {}
-        fast, medium = thresholds
-        return {
-            'fast': (f'быстрее {fast} мин', {'cooking_time__lt': fast}),
-            'medium': (
-                f'быстрее {medium} мин',
-                {'cooking_time__range': (fast, medium - 1)},
-            ),
-            'long': (f'дольше {medium} мин', {'cooking_time__gte': medium}),
+        if fast == medium:
+            return ()
+        self.ranges = {
+            'fast': (0, fast - 1),
+            'medium': (fast, medium - 1),
+            'long': (medium, 10 ** 10),
         }
-
-    def lookups(self, request, model_admin):
+        names = {
+            'fast': f'быстрее {fast} мин',
+            'medium': f'быстрее {medium} мин',
+            'long': f'дольше {medium} мин',
+        }
+        counts = {
+            value: Recipe.objects.filter(
+                cooking_time__range=time_range
+            ).count()
+            for value, time_range in self.ranges.items()
+        }
         return [
-            (
-                value,
-                f'{label} ({Recipe.objects.filter(**condition).count()})',
-            )
-            for value, (label, condition) in self.bins().items()
+            (value, f'{names[value]} ({counts[value]})')
+            for value in self.ranges
         ]
 
     def queryset(self, request, recipes):
-        bin_ = self.bins().get(self.value())
-        return recipes if bin_ is None else recipes.filter(**bin_[1])
+        if self.value() not in self.ranges:
+            return recipes
+        return recipes.filter(
+            cooking_time__range=self.ranges[self.value()]
+        )
 
 
 class RecipesCountMixin:
-    """Показ числа рецептов — общий для тегов и продуктов."""
+    """Показ числа рецептов — общий для тегов, продуктов и пользователей."""
+
+    list_display = ('recipes_count',)
 
     @admin.display(description='Рецептов')
-    def recipes_count(self, tag_or_product):
-        return tag_or_product.recipes.count()
+    def recipes_count(self, record):
+        return record.recipes.count()
 
 
 class RecipeProductInline(admin.TabularInline):
@@ -117,14 +121,19 @@ class RecipeProductInline(admin.TabularInline):
 
 @admin.register(Tag)
 class TagAdmin(RecipesCountMixin, admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug', 'recipes_count')
+    list_display = ('id', 'name', 'slug', *RecipesCountMixin.list_display)
     search_fields = ('name', 'slug')
     list_filter = (InRecipesFilter,)
 
 
 @admin.register(Product)
 class ProductAdmin(RecipesCountMixin, admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit', 'recipes_count')
+    list_display = (
+        'id',
+        'name',
+        'measurement_unit',
+        *RecipesCountMixin.list_display,
+    )
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit', InRecipesFilter)
 
@@ -204,14 +213,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 
 @admin.register(User)
-class UserAdmin(DjangoUserAdmin):
+class UserAdmin(RecipesCountMixin, DjangoUserAdmin):
     list_display = (
         'id',
         'username',
         'full_name',
         'email',
         'avatar_display',
-        'recipes_count',
+        *RecipesCountMixin.list_display,
         'subscriptions_count',
         'subscribers_count',
     )
@@ -229,7 +238,6 @@ class UserAdmin(DjangoUserAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
-            recipes_total=Count('recipes', distinct=True),
             subscriptions_total=Count('subscriptions', distinct=True),
             subscribers_total=Count('author_subscriptions', distinct=True),
         )
@@ -244,10 +252,6 @@ class UserAdmin(DjangoUserAdmin):
         if not user.avatar:
             return ''
         return f'<img src="{user.avatar.url}" height="60">'
-
-    @admin.display(description='Рецептов')
-    def recipes_count(self, user):
-        return user.recipes_total
 
     @admin.display(description='Подписок')
     def subscriptions_count(self, user):

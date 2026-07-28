@@ -38,7 +38,7 @@ class UserSerializer(DjoserUserSerializer):
 
     def get_is_subscribed(self, author):
         request = self.context.get('request')
-        return bool(
+        return (
             request
             and request.user.is_authenticated
             and Subscription.objects.filter(
@@ -61,14 +61,12 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
-        read_only_fields = fields
 
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ('id', 'name', 'measurement_unit')
-        read_only_fields = fields
 
 
 class RecipeProductReadSerializer(serializers.ModelSerializer):
@@ -115,7 +113,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def _has_relation(self, recipe, model):
         request = self.context.get('request')
-        return bool(
+        return (
             request
             and request.user.is_authenticated
             and model.objects.filter(
@@ -164,23 +162,20 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _validate_no_duplicates(field_name, items):
-        if items is None:
+        if not items:
             raise serializers.ValidationError(
                 {field_name: 'Обязательное поле.'}
             )
         duplicates = find_duplicates(items)
         if duplicates:
-            raise serializers.ValidationError({
-                field_name: 'Повторяются: '
-                f'{", ".join(str(item) for item in duplicates)}.'
-            })
+            raise serializers.ValidationError(
+                {field_name: f'Повторяются: {duplicates}.'}
+            )
 
     def validate(self, data):
-        products = data.get('ingredients')
         self._validate_no_duplicates(
             'ingredients',
-            products if products is None
-            else [product['id'] for product in products],
+            [product['id'] for product in data.get('ingredients') or ()],
         )
         self._validate_no_duplicates('tags', data.get('tags'))
         return data
@@ -199,19 +194,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         products = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
         recipe = super().create(validated_data)
-        recipe.tags.set(tags)
         self._write_products(recipe, products)
         return recipe
 
     @transaction.atomic
     def update(self, recipe, validated_data):
-        products = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
-        recipe.tags.set(tags)
         recipe.recipe_products.all().delete()
-        self._write_products(recipe, products)
+        self._write_products(recipe, validated_data.pop('ingredients'))
         return super().update(recipe, validated_data)
 
     def to_representation(self, recipe):
@@ -240,14 +230,12 @@ class UserWithRecipesSerializer(UserSerializer):
         read_only_fields = fields
 
     def get_recipes(self, author):
-        try:
-            recipes_limit = int(
-                self.context.get('request').GET.get('recipes_limit')
-            )
-        except (AttributeError, TypeError, ValueError):
-            recipes_limit = None
         return RecipeShortReadSerializer(
-            author.recipes.all()[:recipes_limit],
+            author.recipes.all()[:int(
+                self.context.get('request').GET.get(
+                    'recipes_limit', 10 ** 10
+                )
+            )],
             many=True,
             context=self.context,
         ).data

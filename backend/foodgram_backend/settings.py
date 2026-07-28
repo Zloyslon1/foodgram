@@ -20,6 +20,8 @@ CSRF_TRUSTED_ORIGINS = [
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+USERNAME_PATTERN = r'^[\w.@+-]+\Z'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

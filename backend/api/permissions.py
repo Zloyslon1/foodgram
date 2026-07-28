@@ -2,10 +2,10 @@ from rest_framework import permissions
 
 
 class IsAuthorOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
-    """Изменять и удалять рецепт может только его автор."""
+    """Изменять и удалять запись может только её автор."""
 
-    def has_object_permission(self, request, view, recipe):
+    def has_object_permission(self, request, view, record):
         return (
             request.method in permissions.SAFE_METHODS
-            or recipe.author == request.user
+            or record.author == request.user
         )

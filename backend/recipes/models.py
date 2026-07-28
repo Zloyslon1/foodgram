@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -13,7 +14,6 @@ from .constants import (
     TAG_NAME_MAX_LENGTH,
     TAG_SLUG_MAX_LENGTH,
     USERNAME_MAX_LENGTH,
-    USERNAME_PATTERN,
 )
 
 
@@ -24,15 +24,7 @@ class User(AbstractUser):
         'Ник',
         max_length=USERNAME_MAX_LENGTH,
         unique=True,
-        validators=(
-            RegexValidator(
-                USERNAME_PATTERN,
-                message=(
-                    'Ник может состоять только из букв, цифр и символов '
-                    '. @ + - _'
-                ),
-            ),
-        ),
+        validators=(RegexValidator(settings.USERNAME_PATTERN),),
     )
     email = models.EmailField(
         'Адрес электронной почты',

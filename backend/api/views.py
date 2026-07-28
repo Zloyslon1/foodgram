@@ -194,16 +194,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         return FileResponse(
             render_shopping_list(
-                RecipeProduct.objects
-                .filter(recipe__shoppingcarts__user=request.user)
-                .values('product__name', 'product__measurement_unit')
-                .annotate(total=Sum('amount'))
-                .order_by('product__name'),
-                Recipe.objects
-                .filter(shoppingcarts__user=request.user)
-                .select_related('author'),
+                RecipeProduct.objects.filter(
+                    recipe__shoppingcarts__user=request.user
+                ).values(
+                    'product__name', 'product__measurement_unit'
+                ).annotate(
+                    total=Sum('amount')
+                ).order_by(
+                    'product__name'
+                ),
+                Recipe.objects.filter(
+                    shoppingcarts__user=request.user
+                ).select_related(
+                    'author'
+                ).prefetch_related(
+                    'tags'
+                ),
             ),
             as_attachment=True,
             filename='shopping_list.txt',
-            content_type='text/plain; charset=utf-8',
+            content_type='text/plain',
         )

@@ -23,16 +23,13 @@ class ImportFromJsonCommand(BaseCommand):
         path = FIXTURES_DIR / self.fixture
         try:
             with open(path, encoding='utf-8') as fixture:
-                records = json.load(fixture)
-            before = self.model.objects.count()
-            self.model.objects.bulk_create(
-                (self.model(**record) for record in records),
-                ignore_conflicts=True,
-            )
-            total = self.model.objects.count()
+                created = self.model.objects.bulk_create(
+                    (self.model(**record) for record in json.load(fixture)),
+                    ignore_conflicts=True,
+                )
             self.stdout.write(self.style.SUCCESS(
                 f'Импорт из фикстуры {path} завершён: '
-                f'новых записей {total - before}, всего в таблице {total}.'
+                f'обработано записей {len(created)}.'
             ))
         except Exception as error:
             raise CommandError(
