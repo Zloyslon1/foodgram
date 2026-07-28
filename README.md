@@ -1,5 +1,7 @@
 # Фудграм
 
+[![Main Foodgram workflow](https://github.com/Zloyslon1/foodgram/actions/workflows/main.yml/badge.svg)](https://github.com/Zloyslon1/foodgram/actions/workflows/main.yml)
+
 Развёрнутый проект: [foodgram-12.duckdns.org](https://foodgram-12.duckdns.org)
 
 «Фудграм» — сайт, на котором пользователи публикуют рецепты, добавляют
