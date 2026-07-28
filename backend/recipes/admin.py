@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import Group
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
@@ -13,6 +14,8 @@ from .models import (
     Tag,
     User,
 )
+
+admin.site.unregister(Group)
 
 
 class HasRelatedFilter(admin.SimpleListFilter):
@@ -72,8 +75,6 @@ class CookingTimeFilter(admin.SimpleListFilter):
         if len(set(times)) < 3:
             return ()
         fast, medium = times[len(times) // 3], times[len(times) * 2 // 3]
-        if fast == medium:
-            return ()
         self.ranges = {
             'fast': (0, fast - 1),
             'medium': (fast, medium - 1),
@@ -143,7 +144,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
-        'cooking_time',
+        'cooking_time_display',
         'author',
         'favorites_count',
         'products_display',
@@ -159,7 +160,16 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     list_filter = ('tags', 'author', CookingTimeFilter)
     inlines = (RecipeProductInline,)
-    readonly_fields = ('favorites_count',)
+    fields = (
+        'name',
+        'author',
+        'text',
+        'cooking_time',
+        'tags',
+        ('image_display', 'image'),
+        'favorites_count',
+    )
+    readonly_fields = ('favorites_count', 'image_display')
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
@@ -167,6 +177,12 @@ class RecipeAdmin(admin.ModelAdmin):
         ).select_related('author').prefetch_related(
             'tags', 'recipe_products__product'
         )
+
+    @admin.display(
+        description=mark_safe('Время<br>(мин)'), ordering='cooking_time'
+    )
+    def cooking_time_display(self, recipe):
+        return recipe.cooking_time
 
     @admin.display(description='В избранном')
     def favorites_count(self, recipe):
@@ -233,8 +249,9 @@ class UserAdmin(RecipesCountMixin, DjangoUserAdmin):
     )
     fieldsets = (
         *DjangoUserAdmin.fieldsets,
-        ('Аватар', {'fields': ('avatar',)}),
+        ('Аватар', {'fields': (('avatar_display', 'avatar'),)}),
     )
+    readonly_fields = ('avatar_display',)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(

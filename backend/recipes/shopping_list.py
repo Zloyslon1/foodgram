@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.utils.formats import date_format
 
 PRODUCT_LINE = '{number}. {name} ({unit}) — {total}'
 RECIPE_LINE = '{number}. {name} (автор: {author}, теги: {tags})'
@@ -7,7 +8,8 @@ RECIPE_LINE = '{number}. {name} (автор: {author}, теги: {tags})'
 def render_shopping_list(products, recipes):
     """Текст списка покупок: продукты и рецепты, для которых они нужны."""
     return '\n'.join([
-        f'Список покупок, составлен {timezone.localdate():%d.%m.%Y}',
+        'Список покупок, составлен '
+        f'{date_format(timezone.localdate(), "d E Y")}',
         '',
         'Продукты:',
         *[
